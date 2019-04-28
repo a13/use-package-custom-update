@@ -65,14 +65,6 @@ Works similar to `cl-union', but keeps OLD-VALUE order."
             (list arg)
           arg))))
 
-
-(defun use-package-custom-update--dequote (x)
-  "Remove car quote from X."
-  (if (and (listp x)
-           (eq 'quote (car x)))
-      (cadr x)
-    x))
-
 (defun use-package-handler/:custom-update (name _keyword args rest state)
   "Generate use-package custom-update keyword code."
   (use-package-concat
@@ -86,12 +78,15 @@ Works similar to `cl-union', but keeps OLD-VALUE order."
                            (format "Customized with use-package %s" name))))
           `(customize-set-variable (quote ,variable)
                                    ,(if (use-package-recognize-function updater)
-                                        `(funcall ,updater ,(if use-package-custom-update-updater-use-symbol
-                                                               `(quote ,variable)
-                                                              `(symbol-value (quote ,variable))))
+                                        `(funcall ,(if (functionp updater)
+                                                       `(quote ,updater)
+                                                     updater)
+                                                  ,(if use-package-custom-update-updater-use-symbol
+                                                       `(quote ,variable)
+                                                     `(symbol-value (quote ,variable))))
                                       `(funcall use-package-custom-update-default-updater
                                                 (symbol-value (quote ,variable))
-                                                (quote ,(use-package-custom-update--dequote updater))))
+                                                ,updater))
                                    ,comment*)))
     args)
    (use-package-process-keywords name rest state)))
