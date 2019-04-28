@@ -78,17 +78,18 @@ Works similar to `cl-union', but keeps OLD-VALUE order."
     #'(lambda (def)
         (let* ((variable (nth 0 def))
                (updater (nth 1 def))
-               (comment (nth 2 def))
-               (value (if (use-package-recognize-function updater)
-                          (funcall updater (if use-package-custom-update-updater-use-symbol
-                                               variable
-                                             (symbol-value variable)))
-                        (funcall use-package-custom-update-default-updater (symbol-value variable)
-                                 (use-package-custom-update--dequote updater))))
-               (comment* (if (stringp comment)
-                             comment
-                           (format "Customized with use-package %s" name))))
-          `(customize-set-variable (quote ,variable) (quote ,value) ,comment*)))
+               (comment (nth 2 def)))
+          (custom-load-symbol variable)
+          (let ((value (if (use-package-recognize-function updater)
+                           (funcall updater (if use-package-custom-update-updater-use-symbol
+                                                variable
+                                              (symbol-value variable)))
+                         (funcall use-package-custom-update-default-updater (symbol-value variable)
+                                  (use-package-custom-update--dequote updater))))
+                (comment* (if (stringp comment)
+                              comment
+                            (format "Customized with use-package %s" name))))
+            `(customize-set-variable (quote ,variable) (quote ,value) ,comment*))))
     args)
    (use-package-process-keywords name rest state)))
 
