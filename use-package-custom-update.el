@@ -28,6 +28,7 @@
 ;;; Code:
 
 (require 'use-package)
+(require 'subr-x)
 (require 'seq)
 
 (defun use-package-custom-update-union (old-value elements)
@@ -36,7 +37,8 @@ Works similar to `cl-union', but keeps OLD-VALUE order."
   (if (listp old-value)
       (append old-value (cl-set-difference (if (listp elements)
                                                elements
-                                             (list elements)) old-value))
+                                             (list elements)) old-value
+                                             :test #'equal))
     (use-package-error
      (concat old-value " is not a list"))))
 
@@ -78,18 +80,19 @@ Works similar to `cl-union', but keeps OLD-VALUE order."
     #'(lambda (def)
         (let* ((variable (nth 0 def))
                (updater (nth 1 def))
-               (comment (nth 2 def)))
-          (custom-load-symbol variable)
-          (let ((value (if (use-package-recognize-function updater)
-                           (funcall updater (if use-package-custom-update-updater-use-symbol
-                                                variable
-                                              (symbol-value variable)))
-                         (funcall use-package-custom-update-default-updater (symbol-value variable)
-                                  (use-package-custom-update--dequote updater))))
-                (comment* (if (stringp comment)
-                              comment
-                            (format "Customized with use-package %s" name))))
-            `(customize-set-variable (quote ,variable) (quote ,value) ,comment*))))
+               (comment (nth 2 def))
+               (comment* (if (stringp comment)
+                             comment
+                           (format "Customized with use-package %s" name))))
+          `(customize-set-variable (quote ,variable)
+                                   ,(if (use-package-recognize-function updater)
+                                        `(funcall ,updater ,(if use-package-custom-update-updater-use-symbol
+                                                               `(quote ,variable)
+                                                              `(symbol-value (quote ,variable))))
+                                      `(funcall use-package-custom-update-default-updater
+                                                (symbol-value (quote ,variable))
+                                                (quote ,(use-package-custom-update--dequote updater))))
+                                   ,comment*)))
     args)
    (use-package-process-keywords name rest state)))
 
