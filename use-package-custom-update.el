@@ -91,19 +91,7 @@ Works similar to `cl-union', but keeps OLD-VALUE order."
     args)
    (use-package-process-keywords name rest state)))
 
-
-(defun use-package-keywords-insert-after (kw new-kw)
-  "Insert NEW-KW into `use-package-keywords' after KW."
-  (unless (member new-kw use-package-keywords)
-    (setq use-package-keywords
-          (if-let ((pos (seq-position use-package-keywords kw)))
-              (append (seq-take use-package-keywords (1+ pos))
-                      (list new-kw)
-                      (seq-drop use-package-keywords (1+ pos)))
-            (append use-package-keywords (list new-kw))))))
-
-
-(use-package-keywords-insert-after :custom :custom-update)
+(add-to-list 'use-package-keywords :custom-update t)
 
 (provide 'use-package-custom-update)
 ;;; use-package-custom-update.el ends here
